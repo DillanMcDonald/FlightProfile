@@ -1,6 +1,10 @@
+#Dillan McDonald
+#Flight Profile Ver 1.0
+
 import math as m
 #import numpy as np
 import mpmath as mp
+import Engine_Calc
 from matplotlib import pyplot as plt
 #import tkinter as tk
 
@@ -136,6 +140,7 @@ def flight_loop(count):  #normal flight process
         past_apogee = 1
     if altitude[count] <= 0 and past_apogee == 1 :
         hit_ground = 1
+
 
 if __name__ == '__main__':
     main()
