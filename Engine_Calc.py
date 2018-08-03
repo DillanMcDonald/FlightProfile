@@ -16,7 +16,7 @@ Wt = 3.98 #Kg/s
 R = 65 #ft-ls/lb-deg
 Gc = 32.2 #ft/s^2
 Cf = 1.35
-
+density_of_N20 = 750 #kg/m^3
 
     #User Defined Parameters
 thrust_target = 8000 #N
@@ -79,6 +79,18 @@ def simple_fuelgrain_calc_old(fuelgrain_mass, fuelgrain_casing_ID, htpb_percenta
     porthole_diameter_in = porthole_diameter/.0254 #in
     porthole_area = m.pi*(porthole_diameter_in/2)**2
     length_of_grain = total_fuelgrain_volume/((m.pi/4)*((airframe_inner_diameter**2)-(porthole_diameter**2)))   #m
+
+def tank_calculations(oxidiser_mass, airframe_ID):  #mass in kg, and ID in inches
+    volume_of_n20 = oxidiser_mass/density_of_N20    #m^3
+    airframe_ID_m = airframe_ID*.0254   #m
+    airframe_radius_m = airframe_ID_m/2 #m
+    spherical_endcap_volume = 4/3*(m.pi*airframe_radius_m**3)   #m^3
+    airframe_crossectional_area = m.pi*airframe_radius_m**2 #m^2
+    cylindrical_tank_lenth = (volume_of_n20-spherical_endcap_volume)/airframe_crossectional_area    #m
+    exact_total_tank_length = cylindrical_tank_lenth + airframe_ID_m    #m
+    cylindrical_tank_lenth_safety = volume_of_n20/airframe_crossectional_area #m
+    total_tank_length_safety = cylindrical_tank_lenth_safety + airframe_ID_m
+
 
 if __name__ == '__main__':
     main()
