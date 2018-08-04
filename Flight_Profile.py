@@ -1,12 +1,12 @@
 #Dillan McDonald
 #Flight Profile Ver 1.0
 
-import math as m
-#import numpy as np
-import mpmath as mp
 import Engine_Calc
+import Parachute_Parameters
+
+import math as m
+import mpmath as mp
 from matplotlib import pyplot as plt
-#import tkinter as tk
 
 #Declaration of the parameters
     #starting with the lists
@@ -42,6 +42,10 @@ of_ratio = 6.5 #should be investigated from trades
 time_step = 0.1 #seconds
 simple_cd = .45 #generalized Cd given with nosecone
 thrust_goal = 8000 #N ,the number that we will design for
+is_parachute = 0 #is there a parachute?
+parachute_diameter = 1 #parachute diameter in meters
+cd_for_parachute_design = 0.9   #this ain't no cone
+parachute_deployment_altitude = 10000   #in meters
 
     #Propep Parameters based on first initialization
 specific_impulse = 201.34 #m/s
@@ -59,6 +63,7 @@ fuelgrain_mass_flow = fuelgrain_mass/burn_time #kg/s
     #Just Programming Parameters
 past_apogee = 0 #boolean variable for past apogee
 hit_ground = 0  #boolean variable for hitting the ground
+apogee = 0  #storage of apogee
 
 def main():
     global hit_ground
@@ -113,6 +118,9 @@ def first_pass():   #set the initial values at t=0 to prepare the iterative loop
 def flight_loop(count):  #normal flight process
     global past_apogee
     global hit_ground
+    global vehicle_crossectional_area
+    global apogee
+
     time.append(count*time_step)
     if count*time_step <= burn_time:
         thrust.append(float(thrust_goal))  #super simple assumed constant thrust
@@ -125,7 +133,15 @@ def flight_loop(count):  #normal flight process
     dynamic_pressure.append((air_density[count-1]*velocity[count-1]**2)/2)   #calculated the dynamic pressure based on previous cycle values
     if past_apogee == 1:
         drag_force.append(.5*coefficient_of_drag[count]*vehicle_crossectional_area*air_density[count-1]*velocity[count-1]**2) #calculate the current drag force from the previous velocity
+        if is_parachute == 1:
+            if parachute_deployment_altitude <= apogee: #ensure that the deployment altitude is not above the apogee
+                if altitude[count-1] < parachute_deployment_altitude :
+                    vehicle_crossectional_area = m.pi*(parachute_diameter/2)**2
+                    coefficient_of_drag[count] = cd_for_parachute_design
+            else:
+                print("Deployment Altitude Out of Range")
     else:
+        apogee = altitude[count-1]
         drag_force.append(-.5*coefficient_of_drag[count]*vehicle_crossectional_area*air_density[count-1]*velocity[count-1]**2) #calculate the current drag force from the previous velocity
     thrust_accel.append(thrust[count]/vehicle_mass[count])
     gravity_accel.append(-0.00000000006673*(5.97219E+24/(6.378*10**6+altitude[count-1])**2))    #variable gravitational acceleration based on altitude
@@ -140,7 +156,6 @@ def flight_loop(count):  #normal flight process
         past_apogee = 1
     if altitude[count] <= 0 and past_apogee == 1 :
         hit_ground = 1
-
 
 if __name__ == '__main__':
     main()
