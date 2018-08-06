@@ -42,10 +42,10 @@ of_ratio = 6.5 #should be investigated from trades
 time_step = 0.1 #seconds
 simple_cd = .45 #generalized Cd given with nosecone
 thrust_goal = 8000 #N ,the number that we will design for
-is_parachute = 0 #is there a parachute?
-parachute_diameter = 1 #parachute diameter in meters
+is_parachute = 1 #is there a parachute?
+parachute_diameter = 0 #parachute diameter in meters
 cd_for_parachute_design = 0.9   #this ain't no cone
-parachute_deployment_altitude = 10000   #in meters
+parachute_deployment_altitude = 30000   #in meters
 
     #Propep Parameters based on first initialization
 specific_impulse = 201.34 #m/s
