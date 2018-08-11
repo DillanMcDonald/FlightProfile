@@ -15,6 +15,7 @@ r = [] #o/f or mixture ratio
 mf = [] #total fuel mass burned
 time = [] #s
 G_sub_o = []    #Free stream propellant mass velocity
+r_dot = []  #regression rate
 
     #The constants
 Ratio_of_Specific_heats = 1.16  #non-dimensional
@@ -41,11 +42,12 @@ needed_dp_injector = 15 #psi
 weight_flow = 7.6 #Not sure where this value came from
 oriface_diameter = 0.0625   #this is the previous smallest value we could manufacture (inches)
 c_star = 5273.921
-time_step = 0.1 #s
+time_step = 0.1 #seconds
 of_ratio = 7 #initial O/F ratio
-initial_port_size = 3.8829  #inches
+initial_port_size = 3.8829  #inches this is diameter
 number_of_ports = 1 #this is in total
 fuelgrain_diameter = 7.5    #inches, this needs to be updated with the phenolic liner ID
+burn_time = 20.52   #seconds
 
     #Calculated Parameters
 Pc_Mpa = 0.00689476*Combustion_chamber_pressure
@@ -118,14 +120,36 @@ def simple_fuelgrain_calc_old(fuelgrain_mass, fuelgrain_casing_ID, htpb_percenta
     length_of_grain = total_fuelgrain_volume/((m.pi/4)*((airframe_inner_diameter**2)-(porthole_diameter**2)))   #m
 
 def fuelgrain_calc_new():
+    global time
+    global  m_dot
+    global r
+    global m_dot_fuel
+    global m_dot_oxidiser
+    global G_sub_o
+    global r_dot
+    global length_of_grain
+    c = 1
+
     #set the initial values
-    time[0] = 0
-    m_dot[0] = Gc * Combustion_chamber_pressure*At / (.95*c_star)   #assuming 95% efficiency at best
-    r[0] = of_ratio
-    m_dot_fuel[0] = m_dot[0] / (r[0] + 1)
-    m_dot_oxidiser[0] = m_dot[0] - m_dot_fuel[0]
-    db = fuelgrain_diameter - initial_port_size*(number_of_ports*2) #burn distance required in inches with an assumed starting port size(probably wrong, I don't know)
-    G_sub_o[0] = m_dot_oxidiser[0]/(number_of_ports*)
+    time.append(0)
+    m_dot.append(Gc * Combustion_chamber_pressure*At / (.95*c_star))   #assuming 95% efficiency at best
+    r.append(of_ratio)
+    m_dot_fuel.append(m_dot[0] / (r[0] + 1))
+    m_dot_oxidiser.append(m_dot[0] - m_dot_fuel[0])
+    db = fuelgrain_diameter - (initial_port_size/2)*(number_of_ports*2) #burn distance required in inches with an assumed starting port size(probably wrong, I don't know)
+    G_sub_o.append(m_dot_oxidiser[0]/(number_of_ports*(m.pi()*(initial_port_size/2)**2)))
+    r_dot.append(0.104*G_sub_o[0]**0.681)
+    length_of_grain = (m_dot_fuel/number_of_ports)/(2*m.pi()*(initial_port_size/2)*(0.0346)*r_dot[0])
+    time.append(time_step*c)
+
+    while time[c] <= burn_time:
+        #create an assumed constant m_dot_oxidiser
+        m_dot_oxidiser.append(m_dot_oxidiser[c-1])
+        
+
+        #progress onto the next iteration
+        c = c + 1
+        time.append(time_step*c)
 
 def tank_calculations(oxidiser_mass, airframe_ID):  #mass in kg, and ID in inches
     global volume_of_n20
