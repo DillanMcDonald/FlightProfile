@@ -8,14 +8,21 @@ import mpmath as mp
 #Declaration of the parameters
     #Starting with the Lists
 thrust = [] #list for the thrustcurve storage
+m_dot = [] #total propellant mass flow
+m_dot_fuel = [] #mass flow of fuel
+m_dot_oxidiser = [] #mass flow of oxidiser
+r = [] #o/f or mixture ratio
+mf = [] #total fuel mass burned
+time = [] #s
+G_sub_o = []    #Free stream propellant mass velocity
 
     #The constants
 Ratio_of_Specific_heats = 1.16  #non-dimensional
 atmospheric_pressure = 14.7 #PSI
 Wt = 3.98 #Kg/s
 R = 65 #ft-ls/lb-deg
-Gc = 32.2 #ft/s^2
-Cf = 1.35
+Gc = 32.2 #ft/s^2   gravitational constants
+Cf = 1.35   #Vacuum thrust coefficient
 density_of_N20 = 750 #kg/m^3
 density_of_N20_I = 48.2 #lbs/ft^3
 coeff_of_discharge = .6
@@ -27,14 +34,28 @@ Combustion_chamber_pressure = 450 #PSI - Should this be User defined?
 Pa = 0.462815421    #psi
 simple_epsilon = 7
 Pa_for_complex_epsilon = 9.4
-dp_wanted = 450
+tank_pressure = 800 #psi
+dp_wanted = 450 #psi
 number_of_plates = 2
-needed_dp_injector = 15
+needed_dp_injector = 15 #psi
 weight_flow = 7.6 #Not sure where this value came from
 oriface_diameter = 0.0625   #this is the previous smallest value we could manufacture (inches)
+c_star = 5273.921
+time_step = 0.1 #s
+of_ratio = 7 #initial O/F ratio
+initial_port_size = 3.8829  #inches
+number_of_ports = 1 #this is in total
+fuelgrain_diameter = 7.5    #inches, this needs to be updated with the phenolic liner ID
 
     #Calculated Parameters
 Pc_Mpa = 0.00689476*Combustion_chamber_pressure
+
+    #just declared global storage
+total_grain_density = 0
+total_fuelgrain_volume = 0
+length_of_grain = 0
+porthole_area = 0
+At = 0
 
 
 def main():
@@ -44,7 +65,6 @@ def main():
     tank_calculations()
     injection_design_based_on_dP()
     diffusion_plate_based_on_dp()
-
 
 def conical_nozzle_calculations_old():
     global Me
@@ -61,7 +81,7 @@ def conical_nozzle_calculations_old():
 
     Me = m.sqrt((2/(Ratio_of_Specific_heats-1))*(((Combustion_chamber_pressure/Pa)**((Ratio_of_Specific_heats-1)/Ratio_of_Specific_heats))-1))
     Pt = Combustion_chamber_pressure*(1+(Ratio_of_Specific_heats-1)/2)**(-Ratio_of_Specific_heats/(Ratio_of_Specific_heats-1))
-    At = ((thrust_target*0.224808942443)/(Cf*Combustion_chamber_pressure))
+    At = ((thrust_target*0.224808942443)/(Cf*Combustion_chamber_pressure))  #Area of the throat
     Dt = m.sqrt((4*At)/m.pi)
     De = m.sqrt(simple_epsilon)*Dt
     Re = De/2
@@ -77,6 +97,10 @@ def Post_and_Pre_combustion_chamber_calculations(airframe_diameter):    #airfram
 
 
 def simple_fuelgrain_calc_old(fuelgrain_mass, fuelgrain_casing_ID, htpb_percentage):  # input in kg,m,and decimal     also from previous tests 88% HTPB to 12% Papi Cures best
+    global total_grain_density
+    global total_fuelgrain_volume
+    global length_of_grain
+    global porthole_area
     # defined Constants for the fuel density
     HTPB_density = 930  # kg/m^3
     Curative_density = 1234  # kg/m^3 This is Papi 94
@@ -93,7 +117,21 @@ def simple_fuelgrain_calc_old(fuelgrain_mass, fuelgrain_casing_ID, htpb_percenta
     porthole_area = m.pi*(porthole_diameter_in/2)**2
     length_of_grain = total_fuelgrain_volume/((m.pi/4)*((airframe_inner_diameter**2)-(porthole_diameter**2)))   #m
 
+def fuelgrain_calc_new():
+    #set the initial values
+    time[0] = 0
+    m_dot[0] = Gc * Combustion_chamber_pressure*At / (.95*c_star)   #assuming 95% efficiency at best
+    r[0] = of_ratio
+    m_dot_fuel[0] = m_dot[0] / (r[0] + 1)
+    m_dot_oxidiser[0] = m_dot[0] - m_dot_fuel[0]
+    db = fuelgrain_diameter - initial_port_size*(number_of_ports*2) #burn distance required in inches with an assumed starting port size(probably wrong, I don't know)
+    G_sub_o[0] = m_dot_oxidiser[0]/(number_of_ports*)
+
 def tank_calculations(oxidiser_mass, airframe_ID):  #mass in kg, and ID in inches
+    global volume_of_n20
+    global exact_total_tank_length
+    global total_tank_length_safety
+
     volume_of_n20 = oxidiser_mass/density_of_N20    #m^3
     airframe_ID_m = airframe_ID*.0254   #m
     airframe_radius_m = airframe_ID_m/2 #m
