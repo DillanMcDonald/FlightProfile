@@ -147,9 +147,9 @@ def fuelgrain_calc_new():
             m_dot_fuel.append(m_dot[c] / (r[c] + 1))
             m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
             db = fuelgrain_diameter - (initial_port_size / 2) * (number_of_ports * 2)  # burn distance required in inches with an assumed starting port size(probably wrong, I don't know)
-            G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * (m.pi() * ((initial_port_size/2)** 2))))
+            G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * (m.pi * ((initial_port_size/2)** 2))))
             r_dot.append(a * G_sub_o[c] ** n)
-            length_of_grain = (m_dot_fuel / number_of_ports) / (2 * m.pi() * (initial_port_size / 2) * (initial_grain_density) * r_dot[c])
+            length_of_grain = (m_dot_fuel[c] / number_of_ports) / (2 * m.pi * (initial_port_size / 2) * (initial_grain_density) * r_dot[c])
             fuel_mass.append(0)
 
             c = c + 1
@@ -160,14 +160,14 @@ def fuelgrain_calc_new():
 
         #create an assumed constant m_dot_oxidiser
         m_dot_oxidiser.append(m_dot_oxidiser[c-1])
-        m_dot_fuel.append(2*m.pi()*number_of_ports*initial_grain_density*length_of_grain*a*((m_dot_oxidiser[c]/(m.pi()*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi()*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**((1 - 2 * n)/(1 + 2 * n)))
-        r.append((1/(2*initial_grain_density*length_of_grain*a))((m_dot_oxidiser[c]/(m.pi()*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi()*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(( 2 * n - 1)/( 2 * n + 1)))
+        m_dot_fuel.append(2*m.pi*number_of_ports*initial_grain_density*length_of_grain*a*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**((1 - 2 * n)/(1 + 2 * n)))
+        r.append((1/(2*initial_grain_density*length_of_grain*a))*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(( 2 * n - 1)/( 2 * n + 1)))
         m_dot.append(Gc * Combustion_chamber_pressure * At / (.95 * c_star))  # assuming 95% efficiency at best also not including nozzle erosion yet (constant At)
         m_dot_fuel.append(m_dot[c] / (r[c] + 1))
         m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
-        G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * (m.pi() * (initial_port_size / 2) ** 2)))
+        G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * (m.pi * ((initial_port_size / 2) + (r_dot[c-1] * time[c-1])) ** 2)))    #ensure that this updates the radius of the port as it burns
         r_dot.append(a * G_sub_o[c] ** n)
-        fuel_mass.append(m.pi()*number_of_ports*initial_grain_density*length_of_grain*(((a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi()*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(2/( 2 * n + 1)))-(initial_port_size/2)**2))
+        fuel_mass.append(m.pi*number_of_ports*initial_grain_density*length_of_grain*(((a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(2/( 2 * n + 1)))-(initial_port_size/2)**2))
         print("Fuel burned: ", fuel_mass[c])
 
         #progress onto the next iteration
