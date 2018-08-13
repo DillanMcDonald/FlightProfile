@@ -21,6 +21,7 @@ r_dot = []  #regression rate
 fuel_mass = []  #the mass of fuelgrain burned
 port_area = []
 port_radius = []    #document the port radius through the burn
+throat_area = []    #this will be for nozzle erosion
 
     #The constants
 Ratio_of_Specific_heats = 1.16  #non-dimensional
@@ -97,10 +98,10 @@ def conical_nozzle_calculations_old():
     Me = m.sqrt((2/(Ratio_of_Specific_heats-1))*(((Combustion_chamber_pressure/Pa)**((Ratio_of_Specific_heats-1)/Ratio_of_Specific_heats))-1))
     Pt = Combustion_chamber_pressure*(1+(Ratio_of_Specific_heats-1)/2)**(-Ratio_of_Specific_heats/(Ratio_of_Specific_heats-1))
     At = ((thrust_target*0.224808942443)/(Cf*Combustion_chamber_pressure))  #Area of the throat
-    Dt = m.sqrt((4*At)/m.pi)
-    De = m.sqrt(simple_epsilon)*Dt
-    Re = De/2
-    Rt = Dt/2
+    Dt = m.sqrt((4*At)/m.pi)    #inches
+    De = m.sqrt(simple_epsilon)*Dt  #inches
+    Re = De/2   #inches
+    Rt = Dt/2   #inches
     Ln = (Rt*(m.sqrt(simple_epsilon)-1))+(((1.5*Rt)*(mp.sec(15)-1))/m.tan(15))
     L1 = 1.5*Rt*m.sin(15)
     Pt = Pc_Mpa*((1+(Ratio_of_Specific_heats-1))/2)**(-Ratio_of_Specific_heats/(Ratio_of_Specific_heats-1))
@@ -145,13 +146,15 @@ def fuelgrain_calc_new():
     global length_of_grain
     global fuel_mass
     global initial_port_size
+    global throat_area
     c = 0
     time.append(0)
 
     while time[c] <= burn_time:
         if c == 0:
             # set the initial values
-            m_dot.append(Gc * Combustion_chamber_pressure * At / (.95 * c_star))  # assuming 95% efficiency at best
+            throat_area.append(At)
+            m_dot.append(Gc * Combustion_chamber_pressure * throat_area[c] / (.95 * c_star))  # assuming 95% efficiency at best
             r.append(of_ratio)
             m_dot_fuel.append(m_dot[c] / (r[c] + 1))
             m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
@@ -172,10 +175,11 @@ def fuelgrain_calc_new():
             print()
 
         #create an assumed constant m_dot_oxidiser
+        throat_area.append(m.pi*(Rt+(.01*c))**2)
         m_dot_oxidiser.append(m_dot_oxidiser[c-1])
         m_dot_fuel.append(2*m.pi*number_of_ports*initial_grain_density*length_of_grain*a*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**((1 - 2 * n)/(1 + 2 * n)))
         r.append((1/(2*initial_grain_density*length_of_grain*a))*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(( 2 * n - 1)/( 2 * n + 1)))
-        m_dot.append(Gc * Combustion_chamber_pressure * At / (.95 * c_star))  # assuming 95% efficiency at best also not including nozzle erosion yet (constant At)
+        m_dot.append(Gc * Combustion_chamber_pressure * throat_area[c] / (.95 * c_star))  # assuming 95% efficiency at best
         #m_dot_fuel.append(m_dot[c] / (r[c] + 1))
         #m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
         port_radius.append(((initial_port_size / 2) + (r_dot[c-1] * time[c-1])))
