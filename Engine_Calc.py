@@ -12,6 +12,7 @@ thrust = [] #list for the thrustcurve storage
 m_dot = [] #total propellant mass flow
 m_dot_fuel = [] #mass flow of fuel
 m_dot_oxidiser = [] #mass flow of oxidiser
+m_dot_final = []    # a cross check measure
 r = [] #o/f or mixture ratio
 mf = [] #total fuel mass burned
 time = [] #s
@@ -154,13 +155,14 @@ def fuelgrain_calc_new():
             r.append(of_ratio)
             m_dot_fuel.append(m_dot[c] / (r[c] + 1))
             m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
+            m_dot_final.append(m_dot_fuel[c] + m_dot_oxidiser[c])
             db = fuelgrain_diameter - (initial_port_size / 2) * (number_of_ports * 2)  # burn distance required in inches with an assumed starting port size(probably wrong, I don't know)
             port_radius.append((initial_port_size/2))
             port_area.append((m.pi * (port_radius[c]** 2)))
             G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * port_area[c]))
             r_dot.append(a * G_sub_o[c] ** n)
             length_of_grain = (m_dot_fuel[c] / number_of_ports) / (2 * m.pi * (initial_port_size / 2) * (initial_grain_density) * r_dot[c])
-            thrust.append(m_dot[c] * specific_impulse * grav_const_I)
+            thrust.append(m_dot_final[c] * specific_impulse)
             fuel_mass.append(0)
 
             c = c + 1
@@ -173,19 +175,20 @@ def fuelgrain_calc_new():
         m_dot_oxidiser.append(m_dot_oxidiser[c-1])
         m_dot_fuel.append(2*m.pi*number_of_ports*initial_grain_density*length_of_grain*a*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**((1 - 2 * n)/(1 + 2 * n)))
         r.append((1/(2*initial_grain_density*length_of_grain*a))*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(( 2 * n - 1)/( 2 * n + 1)))
-
         m_dot.append(Gc * Combustion_chamber_pressure * At / (.95 * c_star))  # assuming 95% efficiency at best also not including nozzle erosion yet (constant At)
-        m_dot_fuel.append(m_dot[c] / (r[c] + 1))
-        m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
+        #m_dot_fuel.append(m_dot[c] / (r[c] + 1))
+        #m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
         port_radius.append(((initial_port_size / 2) + (r_dot[c-1] * time[c-1])))
         port_area.append(m.pi * port_radius[c]**2)
         G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * port_radius[c]))    #ensure that this updates the radius of the port as it burns
         r_dot.append(a * G_sub_o[c] ** n)
         fuel_mass.append(m.pi*number_of_ports*initial_grain_density*length_of_grain*(((a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(2/( 2 * n + 1)))-(initial_port_size/2)**2))
-        thrust.append(m_dot[c] * specific_impulse * grav_const_I)
+        m_dot_final.append(m_dot_fuel[c] + m_dot_oxidiser[c])
+        thrust.append(m_dot_final[c] * specific_impulse)
         #progress onto the next iteration
         c = c + 1
         time.append(time_step*c)
+
     print("Fuel grain required: ", max(fuel_mass))
     time = time[:-1]
     plt.subplot(2, 2, 1)
@@ -199,14 +202,16 @@ def fuelgrain_calc_new():
     plt.ylabel('Port Radius (in)')
     plt.xlabel('time (s)')
     plt.subplot(2, 2, 3)
+    thrust.reverse()
     plt.plot(time, thrust)
     plt.title('Thrust Curve')
     plt.ylabel('Thrust (lbs)')
     plt.xlabel('time (s)')
     plt.subplot(2, 2, 4)
-    plt.plot(time, m_dot)
-    plt.title('m_dot vs time')
-    plt.ylabel('m_dot (lbs/s)')
+    m_dot_fuel.reverse()
+    plt.plot(time, m_dot_fuel)      #this shows me that there is something wrong with this model as it is a regressive burn instead of a progressive burn, I just reversed the list
+    plt.title('m_dot_fuel vs time')
+    plt.ylabel('m_dot_fuel (lbs/s)')
     plt.xlabel('time (s)')
     plt.show()
 
