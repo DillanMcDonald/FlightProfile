@@ -4,6 +4,7 @@
 import Flight_Profile
 import math as m
 import mpmath as mp
+from matplotlib import pyplot as plt
 
 #Declaration of the parameters
     #Starting with the Lists
@@ -16,7 +17,9 @@ mf = [] #total fuel mass burned
 time = [] #s
 G_sub_o = []    #Free stream propellant mass velocity
 r_dot = []  #regression rate
-fuel_mass = []  #the mass of fuelgrain burned/
+fuel_mass = []  #the mass of fuelgrain burned
+port_area = []
+port_radius = []    #document the port radius through the burn
 
     #The constants
 Ratio_of_Specific_heats = 1.16  #non-dimensional
@@ -29,6 +32,7 @@ density_of_N20 = 750 #kg/m^3
 density_of_N20_I = 48.2 #lbs/ft^3
 coeff_of_discharge = .6
 k = 1.7 #not sure what this value is
+grav_const_I = 32.2
 
     #User Defined Parameters
 thrust_target = 8000 #N
@@ -53,9 +57,11 @@ initial_grain_density = 0.0346  #lbs/in^3
 a = 0.104   #regression rate constant
 n = 0.681   #regression rate constant
 combustion_chamber_id = 7.5 #random number in inches
+specific_impulse = 201  #input from propep
 
     #Calculated Parameters
 Pc_Mpa = 0.00689476*Combustion_chamber_pressure
+total_impulse = thrust_target*.22481 * burn_time    #the odd number is Newton to lbf conversion
 
     #just declared global storage
 total_grain_density = 0
@@ -127,6 +133,8 @@ def simple_fuelgrain_calc_old(fuelgrain_mass, fuelgrain_casing_ID, htpb_percenta
 
 def fuelgrain_calc_new():
     global time
+    global grav_const_I
+    global total_impulse
     global  m_dot
     global r
     global m_dot_fuel
@@ -147,9 +155,12 @@ def fuelgrain_calc_new():
             m_dot_fuel.append(m_dot[c] / (r[c] + 1))
             m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
             db = fuelgrain_diameter - (initial_port_size / 2) * (number_of_ports * 2)  # burn distance required in inches with an assumed starting port size(probably wrong, I don't know)
-            G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * (m.pi * ((initial_port_size/2)** 2))))
+            port_radius.append((initial_port_size/2))
+            port_area.append((m.pi * (port_radius[c]** 2)))
+            G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * port_area[c]))
             r_dot.append(a * G_sub_o[c] ** n)
             length_of_grain = (m_dot_fuel[c] / number_of_ports) / (2 * m.pi * (initial_port_size / 2) * (initial_grain_density) * r_dot[c])
+            thrust.append(m_dot[c] * specific_impulse * grav_const_I)
             fuel_mass.append(0)
 
             c = c + 1
@@ -162,17 +173,43 @@ def fuelgrain_calc_new():
         m_dot_oxidiser.append(m_dot_oxidiser[c-1])
         m_dot_fuel.append(2*m.pi*number_of_ports*initial_grain_density*length_of_grain*a*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**((1 - 2 * n)/(1 + 2 * n)))
         r.append((1/(2*initial_grain_density*length_of_grain*a))*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(( 2 * n - 1)/( 2 * n + 1)))
+
         m_dot.append(Gc * Combustion_chamber_pressure * At / (.95 * c_star))  # assuming 95% efficiency at best also not including nozzle erosion yet (constant At)
         m_dot_fuel.append(m_dot[c] / (r[c] + 1))
         m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
-        G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * (m.pi * ((initial_port_size / 2) + (r_dot[c-1] * time[c-1])) ** 2)))    #ensure that this updates the radius of the port as it burns
+        port_radius.append(((initial_port_size / 2) + (r_dot[c-1] * time[c-1])))
+        port_area.append(m.pi * port_radius[c]**2)
+        G_sub_o.append(m_dot_oxidiser[c] / (number_of_ports * port_radius[c]))    #ensure that this updates the radius of the port as it burns
         r_dot.append(a * G_sub_o[c] ** n)
         fuel_mass.append(m.pi*number_of_ports*initial_grain_density*length_of_grain*(((a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(2/( 2 * n + 1)))-(initial_port_size/2)**2))
-        print("Fuel burned: ", fuel_mass[c])
-
+        thrust.append(m_dot[c] * specific_impulse * grav_const_I)
         #progress onto the next iteration
         c = c + 1
         time.append(time_step*c)
+    print("Fuel grain required: ", max(fuel_mass))
+    time = time[:-1]
+    plt.subplot(2, 2, 1)
+    plt.plot(time, fuel_mass)
+    plt.title('Fuel Burned vs time')
+    plt.ylabel('Fuel burned (lbs)')
+    plt.xlabel('time (s)')
+    plt.subplot(2, 2, 2)
+    plt.plot(time, port_radius)
+    plt.title('Port radius vs time')
+    plt.ylabel('Port Radius (in)')
+    plt.xlabel('time (s)')
+    plt.subplot(2, 2, 3)
+    plt.plot(time, thrust)
+    plt.title('Thrust Curve')
+    plt.ylabel('Thrust (lbs)')
+    plt.xlabel('time (s)')
+    plt.subplot(2, 2, 4)
+    plt.plot(time, m_dot)
+    plt.title('m_dot vs time')
+    plt.ylabel('m_dot (lbs/s)')
+    plt.xlabel('time (s)')
+    plt.show()
+
 
 def tank_calculations(oxidiser_mass, airframe_ID):  #mass in kg, and ID in inches
     global volume_of_n20
