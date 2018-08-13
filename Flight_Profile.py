@@ -37,7 +37,7 @@ air_pressure_sea_level = 101325 #Pa
 bodytube_od = 0.2094484 #meters
 bodytube_id = 0.2046224 #meters
 start_vehicle_dry_mass = 126.1 #kg
-start_vehicle_propellent_mass = 145.15 #kg
+#start_vehicle_propellent_mass = 145.15 #kg
 of_ratio = 6.5 #should be investigated from trades
 time_step = 0.1 #seconds
 simple_cd = .45 #generalized Cd given with nosecone
@@ -46,27 +46,57 @@ is_parachute = 1 #is there a parachute?
 parachute_diameter = 0 #parachute diameter in meters
 cd_for_parachute_design = 0.9   #this ain't no cone
 parachute_deployment_altitude = 30000   #in meters
+burn_time = 30 #user defined burn time
 
     #Propep Parameters based on first initialization
 specific_impulse = 201.34 #m/s
+c_star = 5273.921
 
-    #The Calculated Parameters
+#The Calculated Parameters
 vehicle_crossectional_area = m.pi*(bodytube_od/2)**2    #assuming constant
-start_vehicle_wet_mass = start_vehicle_dry_mass + start_vehicle_propellent_mass #kg
-burn_time = (start_vehicle_propellent_mass*specific_impulse*simple_gravity/thrust_goal) #Seconds
-nitrous_oxide_mass = (start_vehicle_propellent_mass/(of_ratio+1))*of_ratio  #nitrous mass from o/f Ratio
-fuelgrain_mass = (start_vehicle_propellent_mass/(of_ratio+1))   #Grain mass from o/f Ratio
-propellent_mass_flow = start_vehicle_propellent_mass/burn_time #kg/s
-nitrous_oxide_mass_flow = nitrous_oxide_mass/burn_time #kg/s
-fuelgrain_mass_flow = fuelgrain_mass/burn_time #kg/s
+#start_vehicle_wet_mass = start_vehicle_dry_mass + start_vehicle_propellent_mass #kg
+#burn_time = (start_vehicle_propellent_mass*specific_impulse*simple_gravity/thrust_goal) #Seconds
+#nitrous_oxide_mass = (start_vehicle_propellent_mass/(of_ratio+1))*of_ratio  #nitrous mass from o/f Ratio
+#fuelgrain_mass = (start_vehicle_propellent_mass/(of_ratio+1))   #Grain mass from o/f Ratio
+#propellent_mass_flow = start_vehicle_propellent_mass/burn_time #kg/s
+#nitrous_oxide_mass_flow = nitrous_oxide_mass/burn_time #kg/s
+#fuelgrain_mass_flow = fuelgrain_mass/burn_time #kg/s
+
+    #Imported parameter definition
+fuelgrain_mass = 0
+nitrous_oxide_mass = 0
+propellant_mass_flow = []
+nitrous_oxide_mass_flow = []
+fuelgrain_mass_flow = []
 
     #Just Programming Parameters
 past_apogee = 0 #boolean variable for past apogee
 hit_ground = 0  #boolean variable for hitting the ground
 apogee = 0  #storage of apogee
+start_vehicle_propellent_mass = 0 #kg
+start_vehicle_wet_mass = 0 #kg
 
 def main():
     global hit_ground
+    global fuelgrain_mass
+    global nitrous_oxide_mass
+    global propellant_mass_flow
+    global nitrous_oxide_mass_flow
+    global fuelgrain_mass_flow
+    global start_vehicle_wet_mass
+
+    Engine_Calc.conical_nozzle_calculations_old()
+    Engine_Calc.fuelgrain_calc_new()
+    print(burn_time)
+
+    # Imported parameters from Engine Calc
+    fuelgrain_mass = Engine_Calc.fuelgrain_mass
+    nitrous_oxide_mass = Engine_Calc.oxidiser_mass
+    propellant_mass_flow = Engine_Calc.m_dot_final
+    nitrous_oxide_mass_flow = Engine_Calc.m_dot_oxidiser
+    fuelgrain_mass_flow = Engine_Calc.m_dot_fuel
+    start_vehicle_propellent_mass = start_vehicle_dry_mass + (fuelgrain_mass + nitrous_oxide_mass) * 0.453592  # kg
+    start_vehicle_wet_mass = start_vehicle_dry_mass + start_vehicle_propellent_mass  # kg
     count = 1
     first_pass()
     while hit_ground != 1:
@@ -123,8 +153,9 @@ def flight_loop(count):  #normal flight process
 
     time.append(count*time_step)
     if count*time_step <= burn_time:
-        thrust.append(float(thrust_goal))  #super simple assumed constant thrust
-        vehicle_mass.append(start_vehicle_wet_mass-(propellent_mass_flow*time[count]))  #mass dispelled by propellent
+        thrust.append(Engine_Calc.thrust[count]*4.44822)  #import thrust from Engine Calc and convert to N
+        #vehicle_mass.append(start_vehicle_wet_mass-(propellent_mass_flow*time[count]))  #mass dispelled by propellent
+        vehicle_mass.append(start_vehicle_wet_mass - (propellant_mass_flow[count]*0.453592))  # mass dispelled by propellent
     else:
         thrust.append(0)    #post burnout
         vehicle_mass.append(vehicle_mass[count-1])  #assuming constant mass flow

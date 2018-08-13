@@ -36,8 +36,15 @@ coeff_of_discharge = .6
 k = 1.7 #not sure what this value is
 grav_const_I = 32.2
 
+    #imported parameters from Flight Profile
+thrust_target = Flight_Profile.thrust_goal
+of_ratio = Flight_Profile.of_ratio
+time_step = Flight_Profile.time_step
+burn_time = Flight_Profile.burn_time
+specific_impulse = Flight_Profile.specific_impulse
+c_star = Flight_Profile.c_star
+
     #User Defined Parameters
-thrust_target = 8000 #N
 Combustion_chamber_pressure = 450 #PSI - Should this be User defined?
 Pa = 0.462815421    #psi
 simple_epsilon = 7
@@ -48,18 +55,13 @@ number_of_plates = 2
 needed_dp_injector = 15 #psi
 weight_flow = 7.6 #Not sure where this value came from
 oriface_diameter = 0.0625   #this is the previous smallest value we could manufacture (inches)
-c_star = 5273.921
-time_step = 0.1 #seconds
-of_ratio = 7 #initial O/F ratio
-initial_port_size = 3.8829  #inches this is diameter
+initial_port_size = 3.8829  #inches, this is diameter, also it is a starting guess
 number_of_ports = 1 #this is in total
 fuelgrain_diameter = 7.5    #inches, this needs to be updated with the phenolic liner ID
-burn_time = 20.52   #seconds
 initial_grain_density = 0.0346  #lbs/in^3
 a = 0.104   #regression rate constant
 n = 0.681   #regression rate constant
 combustion_chamber_id = 7.5 #random number in inches
-specific_impulse = 201  #input from propep
 
     #Calculated Parameters
 Pc_Mpa = 0.00689476*Combustion_chamber_pressure
@@ -71,7 +73,8 @@ total_fuelgrain_volume = 0
 length_of_grain = 0
 porthole_area = 0
 At = 0
-
+fuelgrain_mass = 0
+oxidiser_mass = 0
 
 def main():
     conical_nozzle_calculations_old()
@@ -137,16 +140,20 @@ def fuelgrain_calc_new():
     global time
     global grav_const_I
     global total_impulse
-    global  m_dot
+    global m_dot
     global r
     global m_dot_fuel
     global m_dot_oxidiser
+    global m_dot_final
     global G_sub_o
     global r_dot
     global length_of_grain
     global fuel_mass
     global initial_port_size
     global throat_area
+    global thrust
+    global fuelgrain_mass
+    global oxidiser_mass
     c = 0
     time.append(0)
 
@@ -175,11 +182,11 @@ def fuelgrain_calc_new():
             print()
 
         #create an assumed constant m_dot_oxidiser
-        throat_area.append(m.pi*(Rt+(.01*c))**2)
-        m_dot_oxidiser.append(m_dot_oxidiser[c-1])
+        throat_area.append(m.pi*(Rt+(.01*c))**2)    #nozzle erosion at a rate of .01 in/s
+        m_dot_oxidiser.append(m_dot_oxidiser[c-1])  #assuming a constant oxidiser mass flow
         m_dot_fuel.append(2*m.pi*number_of_ports*initial_grain_density*length_of_grain*a*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**((1 - 2 * n)/(1 + 2 * n)))
         r.append((1/(2*initial_grain_density*length_of_grain*a))*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*(a*(2*n + 1)*((m_dot_oxidiser[c]/(m.pi*number_of_ports))**n)*time[c] + (initial_port_size/2)**(2*n + 1))**(( 2 * n - 1)/( 2 * n + 1)))
-        m_dot.append(Gc * Combustion_chamber_pressure * throat_area[c] / (.95 * c_star))  # assuming 95% efficiency at best
+        m_dot.append(Gc * Combustion_chamber_pressure * throat_area[c] / (.95 * c_star))  #assuming 95% efficiency at best
         #m_dot_fuel.append(m_dot[c] / (r[c] + 1))
         #m_dot_oxidiser.append(m_dot[c] - m_dot_fuel[c])
         port_radius.append(((initial_port_size / 2) + (r_dot[c-1] * time[c-1])))
@@ -193,7 +200,11 @@ def fuelgrain_calc_new():
         c = c + 1
         time.append(time_step*c)
 
-    print("Fuel grain required: ", max(fuel_mass))
+    #added simple calc for needed oxidiser
+    oxidiser_mass = (sum(m_dot_oxidiser)/len(m_dot_oxidiser))*burn_time
+
+    print("Fuel grain mass required: ", max(fuel_mass))
+    fuelgrain_mass = max(fuel_mass)
     time = time[:-1]
     plt.subplot(2, 2, 1)
     plt.plot(time, fuel_mass)
