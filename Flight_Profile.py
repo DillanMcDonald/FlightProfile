@@ -36,17 +36,17 @@ air_pressure_sea_level = 101325 #Pa
     #The User Defined Parameters
 bodytube_od = 0.2094484 #meters
 bodytube_id = 0.2046224 #meters
-start_vehicle_dry_mass = 126.1 #kg
+start_vehicle_dry_mass = 91 #kg
 #start_vehicle_propellent_mass = 145.15 #kg
 of_ratio = 6.5 #should be investigated from trades
 time_step = 0.1 #seconds
 simple_cd = .45 #generalized Cd given with nosecone
 thrust_goal = 8000 #N ,the number that we will design for
-is_parachute = 1 #is there a parachute?
+is_parachute = 0 #is there a parachute?
 parachute_diameter = 0 #parachute diameter in meters
 cd_for_parachute_design = 0.9   #this ain't no cone
 parachute_deployment_altitude = 30000   #in meters
-burn_time = 30 #user defined burn time
+burn_time = 20 #user defined burn time 45 will get you to 100,000 ft
 
     #Propep Parameters based on first initialization
 specific_impulse = 201.34 #m/s
@@ -87,15 +87,13 @@ def main():
 
     Engine_Calc.conical_nozzle_calculations_old()
     Engine_Calc.fuelgrain_calc_new()
-    print(burn_time)
-
     # Imported parameters from Engine Calc
-    fuelgrain_mass = Engine_Calc.fuelgrain_mass
-    nitrous_oxide_mass = Engine_Calc.oxidiser_mass
+    fuelgrain_mass = Engine_Calc.fuelgrain_mass * 0.453592  #imported and converted to kg
+    nitrous_oxide_mass = Engine_Calc.oxidiser_mass * 0.453592   #imported and converted to kg
     propellant_mass_flow = Engine_Calc.m_dot_final
     nitrous_oxide_mass_flow = Engine_Calc.m_dot_oxidiser
     fuelgrain_mass_flow = Engine_Calc.m_dot_fuel
-    start_vehicle_propellent_mass = start_vehicle_dry_mass + (fuelgrain_mass + nitrous_oxide_mass) * 0.453592  # kg
+    start_vehicle_propellent_mass =(fuelgrain_mass + nitrous_oxide_mass)   # kg
     start_vehicle_wet_mass = start_vehicle_dry_mass + start_vehicle_propellent_mass  # kg
     count = 1
     first_pass()
@@ -106,6 +104,9 @@ def main():
         #print("ANet : ", net_accel[count - 1])
     print("Done")
     print("Max Altitude(m): ", max(altitude))
+    print("Start Vehicle Wet Mass(kg): ", start_vehicle_wet_mass)
+    print("Nitrous Oxide Mass(kg): ", nitrous_oxide_mass)
+    print("Fuelgrain Mass(kg): ", fuelgrain_mass)
     plt.subplot(2,2,1)
     plt.plot(time,net_accel)
     plt.title('Flight Profile')
@@ -155,7 +156,7 @@ def flight_loop(count):  #normal flight process
     if count*time_step <= burn_time:
         thrust.append(Engine_Calc.thrust[count]*4.44822)  #import thrust from Engine Calc and convert to N
         #vehicle_mass.append(start_vehicle_wet_mass-(propellent_mass_flow*time[count]))  #mass dispelled by propellent
-        vehicle_mass.append(start_vehicle_wet_mass - (propellant_mass_flow[count]*0.453592))  # mass dispelled by propellent
+        vehicle_mass.append(start_vehicle_wet_mass - (nitrous_oxide_mass_flow[count]* 0.453592*time[count])-(fuelgrain_mass_flow[count]* 0.453592*time[count]))  # mass dispelled by propellent
     else:
         thrust.append(0)    #post burnout
         vehicle_mass.append(vehicle_mass[count-1])  #assuming constant mass flow

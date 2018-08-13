@@ -201,9 +201,9 @@ def fuelgrain_calc_new():
         time.append(time_step*c)
 
     #added simple calc for needed oxidiser
-    oxidiser_mass = (sum(m_dot_oxidiser)/len(m_dot_oxidiser))*burn_time
+    oxidiser_mass = (sum(m_dot_oxidiser)/len(m_dot_oxidiser)) * burn_time
 
-    print("Fuel grain mass required: ", max(fuel_mass))
+    #print("Fuel grain mass required: ", max(fuel_mass))
     fuelgrain_mass = max(fuel_mass)
     time = time[:-1]
     plt.subplot(2, 2, 1)
