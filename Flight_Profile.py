@@ -46,7 +46,7 @@ is_parachute = 0 #is there a parachute?
 parachute_diameter = 0 #parachute diameter in meters
 cd_for_parachute_design = 0.9   #this ain't no cone
 parachute_deployment_altitude = 30000   #in meters
-burn_time = 20 #user defined burn time 45 will get you to 100,000 ft
+burn_time = 25 #user defined burn time 45 will get you to 100,000 ft
 
     #Propep Parameters based on first initialization
 specific_impulse = 201.34 #m/s

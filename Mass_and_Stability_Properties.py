@@ -109,7 +109,5 @@ stability_margin = (Dry_CG-simple_cp)/body_tube_od
 def main():
     print(stability_margin)
 
-
-
 if __name__ == '__main__':
     main()
