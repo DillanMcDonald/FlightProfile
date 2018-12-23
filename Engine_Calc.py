@@ -76,11 +76,11 @@ At = 0
 def main():
     conical_nozzle_calculations_old()
     Post_and_Pre_combustion_chamber_calculations(combustion_chamber_id)
-    simple_fuelgrain_calc_old()
+    #simple_fuelgrain_calc_old()
     #tank_calculations()
     #injection_design_based_on_dP()
     #diffusion_plate_based_on_dp()
-    #fuelgrain_calc_new()
+    fuelgrain_calc_new()
 
 def conical_nozzle_calculations_old():
     global Me

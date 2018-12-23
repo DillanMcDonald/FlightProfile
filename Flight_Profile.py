@@ -78,6 +78,7 @@ def main():
         #print("ANet : ", net_accel[count - 1])
     print("Done")
     print("Max Altitude(m): ", max(altitude))
+    print("Max Velocity(m/s): ", max(velocity))
     plt.subplot(2,2,1)
     plt.plot(time,net_accel)
     plt.title('Flight Profile')
