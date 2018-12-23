@@ -106,6 +106,10 @@ def conical_nozzle_calculations_old():
     L1 = 1.5*Rt*m.sin(15)
     Pt = Pc_Mpa*((1+(Ratio_of_Specific_heats-1))/2)**(-Ratio_of_Specific_heats/(Ratio_of_Specific_heats-1))
     expirimental_epsilon = 1/((((Ratio_of_Specific_heats+1)/2)**(1/(Ratio_of_Specific_heats-1)))*((Pa_for_complex_epsilon/Combustion_chamber_pressure)**(1/Ratio_of_Specific_heats))*m.sqrt(((Ratio_of_Specific_heats+1)/(Ratio_of_Specific_heats-1))*(1-(Pa_for_complex_epsilon/Combustion_chamber_pressure)**((Ratio_of_Specific_heats-1)/Ratio_of_Specific_heats))))
+    print("Throat Area (In^2): ", At)
+    print("Exit radius(In): ",Re)
+    print("Pt : ",Pt)
+    print("Me : ",Me)
 
 def Post_and_Pre_combustion_chamber_calculations(airframe_diameter):    #airframe diameter is actually the ID of the combustion chambers - so it needs the liners
     post_length = .75*airframe_diameter #not sure where this is from
@@ -194,6 +198,8 @@ def fuelgrain_calc_new():
         time.append(time_step*c)
 
     print("Fuel grain required: ", max(fuel_mass))
+    print("M_dot_fuel: ", max(m_dot_fuel))
+    print("M_dot_oxydizer: ", max(m_dot_oxidiser))
     time = time[:-1]
     plt.subplot(2, 2, 1)
     plt.plot(time, fuel_mass)
