@@ -44,7 +44,7 @@ Pa_for_complex_epsilon = 9.4
 tank_pressure = 800 #psi
 time_step = 0.1 #seconds
 of_ratio = 2.3 #initial O/F ratio
-burn_time = 20.52   #seconds
+burn_time = 87.498   #seconds
 #combustion_chamber_id = 7.5 #random number in inches
 specific_impulse = 250  #input from propep
 
@@ -69,12 +69,7 @@ At = 0
 
 def main():
     conical_nozzle_calculations_old()
-    #Post_and_Pre_combustion_chamber_calculations(combustion_chamber_id)
-    #simple_fuelgrain_calc_old()
     #tank_calculations()
-    #injection_design_based_on_dP()
-    #diffusion_plate_based_on_dp()
-    #fuelgrain_calc_new()
 
 def conical_nozzle_calculations_old():
     global Me
@@ -99,11 +94,11 @@ def conical_nozzle_calculations_old():
     #Ln = (Rt*(m.sqrt(optimum_epsilon)-1))+(((1.5*Rt)*(mp.sec(15)-1))/m.tan(15))
     Ln = noz_length*((m.sqrt(optimum_epsilon)-1)*Rt/m.tan(m.radians(15)))
     L1 = 1.5*Rt*m.sin(15)
-    Pt = Pc_Mpa*((1+(Ratio_of_Specific_heats-1))/2)**(-Ratio_of_Specific_heats/(Ratio_of_Specific_heats-1))
+    #Pt = Pc_Mpa*((1+(Ratio_of_Specific_heats-1))/2)**(-Ratio_of_Specific_heats/(Ratio_of_Specific_heats-1))
     print("Throat radius (In): ", Rt)
     print("Exit radius(In): ",Re)
-    print("Pt : ",Pt)
-    print("Me : ",Me)
+    #print("Pt : ",Pt)
+    #print("Me : ",Me)
 
 def tank_calculations(oxidiser_mass, airframe_ID):  #mass in kg, and ID in inches
     global volume_of_n20
