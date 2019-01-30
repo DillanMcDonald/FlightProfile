@@ -1,6 +1,7 @@
 #Dillan McDonald
 #Engine Calc Ver 1.0
 
+from rocketcea.cea_obj import CEA_Obj
 #import Flight_Profile
 import math as m
 import mpmath as mp
@@ -32,19 +33,23 @@ density_of_N20_I = 48.2 #lbs/ft^3
 coeff_of_discharge = .6
 k = 1.7 #idk what this is
 grav_const_I = 32.2
+simple_gravity = 9.81 #m/s^2
 
     #User Defined Parameters
-thrust_target = 8896 #N
+thrust_target = 11120.554070627251 #8896 #N
 Combustion_chamber_pressure = 500 #PSI
 Pa = 0.462815421    #psi
 Pa_for_complex_epsilon = 9.4
 tank_pressure = 800 #psi
 time_step = 0.1 #seconds
 of_ratio = 2.3 #initial O/F ratio
-burn_time = 100   #seconds
+#burn_time = 100   #seconds
 #combustion_chamber_id = 7.5 #random number in inches
-specific_impulse = 258.7  #input from propep
-start_vehicle_propellent_mass = 317.4 #kg
+
+
+
+
+#specific_impulse = 258.7  #input from propep
 
 Po = Combustion_chamber_pressure/atmospheric_pressure #chamber pressure in atmospheres
 Pe = 1#pressure at nozzle exit in atmospheres
@@ -52,11 +57,31 @@ noz_length = 0.8 #this is the optimum nozzle length for a Rao Bell
 noz_inlet_angle = 15 #degrees
 
     #Calculated Parameters
-Pc_Mpa = 0.00689476*Combustion_chamber_pressure
-total_impulse = thrust_target*.22481 * burn_time    #the odd number is Newton to lbf conversion
 optimum_epsilon = 1/(pow((Ratio_of_Specific_heats+1)/2,1/(Ratio_of_Specific_heats-1))*pow(Pe/Po,1/Ratio_of_Specific_heats)*pow(((Ratio_of_Specific_heats+1)/(Ratio_of_Specific_heats-1))*(1-pow(Pe/Po,(Ratio_of_Specific_heats-1)/Ratio_of_Specific_heats)),1/2))
+ispObj = CEA_Obj( oxName='LOX', fuelName='RP1')
+specific_impulse = ispObj.get_Isp( Pc=Combustion_chamber_pressure, MR=of_ratio, eps=optimum_epsilon)
+cstarcea = ispObj.get_Cstar(Pc=Combustion_chamber_pressure, MR=of_ratio)
+
+total_impulse_base11 = 889600
+start_vehicle_propellent_mass = 317.4 #kg
+total_impulsem = 1000000
+
+while total_impulsem > total_impulse_base11 :
+    burn_time = (start_vehicle_propellent_mass*specific_impulse*simple_gravity/thrust_target) #Seconds
+    total_impulse = thrust_target*.22481 * burn_time    #the odd number is Newton to lbf conversion
+    total_impulsem = thrust_target* burn_time    #Requirement for base 11: 889600
+    start_vehicle_propellent_mass = start_vehicle_propellent_mass - .01
+
+
+Pc_Mpa = 0.00689476*Combustion_chamber_pressure
 oxidiser_mass = (start_vehicle_propellent_mass/(of_ratio+1))*of_ratio
 fuel_mass = start_vehicle_propellent_mass-oxidiser_mass
+print("Thrust Target(N): ", thrust_target)
+print("Vehicle Propellant Mass(Kg): ",start_vehicle_propellent_mass)
+print("Burn Time(s): ",burn_time)
+print("Total Impulse(lbs*s): ",total_impulse)
+print("Total Impulse(N*s): ",total_impulsem, ", The Competition Maximum is 889600")
+print("Specific Impusle: ",specific_impulse)
 print("Oxidiser Mass(kg): ", oxidiser_mass)
 print("Fuel Mass(kg): ", fuel_mass)
 print("Optimum Expansion Ratio: ",optimum_epsilon)
@@ -87,6 +112,7 @@ def conical_nozzle_calculations_old():
     global expirimental_epsilon
 
     Me = m.sqrt((2/(Ratio_of_Specific_heats-1))*(((Combustion_chamber_pressure/Pa)**((Ratio_of_Specific_heats-1)/Ratio_of_Specific_heats))-1))
+    Me_CEA = ispObj.get_Chamber_SonicVel( Pc=Combustion_chamber_pressure, MR=of_ratio, eps=optimum_epsilon)
     Pt = Combustion_chamber_pressure*(1+(Ratio_of_Specific_heats-1)/2)**(-Ratio_of_Specific_heats/(Ratio_of_Specific_heats-1))
     At = ((thrust_target*0.224808942443)/(Cf*Combustion_chamber_pressure))  #Area of the throat
     Dt = m.sqrt((4*At)/m.pi)    #inches
@@ -96,11 +122,13 @@ def conical_nozzle_calculations_old():
     #Ln = (Rt*(m.sqrt(optimum_epsilon)-1))+(((1.5*Rt)*(mp.sec(15)-1))/m.tan(15))
     Ln = noz_length*((m.sqrt(optimum_epsilon)-1)*Rt/m.tan(m.radians(15)))
     L1 = 1.5*Rt*m.sin(15)
-    cstar = (Combustion_chamber_pressure * At)/(0.0685218*start_vehicle_propellent_mass/burn_time)
+    #cstar = (Combustion_chamber_pressure * At)/(0.0685218*start_vehicle_propellent_mass/burn_time) #home calc cstar
+    cstar = cstarcea #their number is obviously better
+    cstarm = cstar*0.3048
     #Pt = Pc_Mpa*((1+(Ratio_of_Specific_heats-1))/2)**(-Ratio_of_Specific_heats/(Ratio_of_Specific_heats-1))
 
     #Combustion Chamber sizing the Alt Way
-    lstar = 40
+    lstar = 50 #high end
     Vc = lstar*At
     Lc = np.exp(0.029*np.log(Dt*2.54)**2 + 0.47*np.log(Dt*2.54)+1.94)/ 2.54 #this is a rough approximation converted to inches
     Rc = m.sqrt((Vc/Lc)/m.pi) #this is my assumed cylinder
@@ -111,15 +139,20 @@ def conical_nozzle_calculations_old():
         err = Dc-Dci
         Dci=Dc
     CTR = (m.pi*(Dc/2)**2)/At
+    #print("Mach number: ", Me)
+    #print("Mach number CEA: ", Me_CEA)
     print("Throat radius (In): ", Rt)
     print("Exit radius(In): ",Re)
     print("Nozzle Length(In): ", Ln)
-    print("cstar: ",cstar)
+    #print("cstar(ft/s): ",cstar)
+    #print("cstar(m/2): ",cstarm)
+    print("cstar CEA(ft/s): ",cstarcea)
+    print("cstar CEA(m/2): ", cstarcea*0.3048)
     print("lstar: ",lstar)
     print("Chamber Volume(in^3): ",Vc)
     print("Chamber Length(In): ", Lc )
-    print("Chamber Radius(In): ",Rc)
-    print("Chamber Radius Iter(In): ",Dc/2)
+    #print("Chamber Radius(In): ",Rc)
+    print("Chamber Radius(In): ",Dc/2) #this one includes the nozzle inlet
     print("Chamber to Throat Area Ratio: ",CTR)
     #print("Pt : ",Pt)
     #print("Me : ",Me)
