@@ -133,12 +133,15 @@ def conical_nozzle_calculations_old():
     Lc = np.exp(0.029*np.log(Dt*2.54)**2 + 0.47*np.log(Dt*2.54)+1.94)/ 2.54 #this is a rough approximation converted to inches
     Rc = m.sqrt((Vc/Lc)/m.pi) #this is my assumed cylinder
     err = 100
+    
     while err > .001 :
         Dci = Rc*2 #the initial DC for the iteration
         Dc = m.sqrt((Dt**3 + (24/m.pi)*m.tan(noz_inlet_angle*m.pi/180)*Vc)/(Dci+6*m.tan(noz_inlet_angle*m.pi/180)*Lc))
         err = Dc-Dci
         Dci=Dc
+
     CTR = (m.pi*(Dc/2)**2)/At
+
     #print("Mach number: ", Me)
     #print("Mach number CEA: ", Me_CEA)
     print("Throat radius (In): ", Rt)
