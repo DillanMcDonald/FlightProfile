@@ -1,9 +1,10 @@
 #Dillan McDonald
 #Engine Calc Ver 1.0
 
-import Flight_Profile
+#import Flight_Profile
 import math as m
 import mpmath as mp
+import numpy as np
 from matplotlib import pyplot as plt
 
 #Declaration of the parameters
@@ -17,10 +18,6 @@ r = [] #o/f or mixture ratio
 mf = [] #total fuel mass burned
 time = [] #s
 G_sub_o = []    #Free stream propellant mass velocity
-r_dot = []  #regression rate
-fuel_mass = []  #the mass of fuelgrain burned
-port_area = []
-port_radius = []    #document the port radius through the burn
 throat_area = []    #this will be for nozzle erosion
 
     #The constants
@@ -44,19 +41,24 @@ Pa_for_complex_epsilon = 9.4
 tank_pressure = 800 #psi
 time_step = 0.1 #seconds
 of_ratio = 2.3 #initial O/F ratio
-burn_time = 87.498   #seconds
+burn_time = 100   #seconds
 #combustion_chamber_id = 7.5 #random number in inches
-specific_impulse = 250  #input from propep
+specific_impulse = 258.7  #input from propep
+start_vehicle_propellent_mass = 317.4 #kg
 
 Po = Combustion_chamber_pressure/atmospheric_pressure #chamber pressure in atmospheres
 Pe = 1#pressure at nozzle exit in atmospheres
 noz_length = 0.8 #this is the optimum nozzle length for a Rao Bell
+noz_inlet_angle = 15 #degrees
 
     #Calculated Parameters
 Pc_Mpa = 0.00689476*Combustion_chamber_pressure
 total_impulse = thrust_target*.22481 * burn_time    #the odd number is Newton to lbf conversion
 optimum_epsilon = 1/(pow((Ratio_of_Specific_heats+1)/2,1/(Ratio_of_Specific_heats-1))*pow(Pe/Po,1/Ratio_of_Specific_heats)*pow(((Ratio_of_Specific_heats+1)/(Ratio_of_Specific_heats-1))*(1-pow(Pe/Po,(Ratio_of_Specific_heats-1)/Ratio_of_Specific_heats)),1/2))
-
+oxidiser_mass = (start_vehicle_propellent_mass/(of_ratio+1))*of_ratio
+fuel_mass = start_vehicle_propellent_mass-oxidiser_mass
+print("Oxidiser Mass(kg): ", oxidiser_mass)
+print("Fuel Mass(kg): ", fuel_mass)
 print("Optimum Expansion Ratio: ",optimum_epsilon)
 
     #just declared global storage
@@ -94,11 +96,35 @@ def conical_nozzle_calculations_old():
     #Ln = (Rt*(m.sqrt(optimum_epsilon)-1))+(((1.5*Rt)*(mp.sec(15)-1))/m.tan(15))
     Ln = noz_length*((m.sqrt(optimum_epsilon)-1)*Rt/m.tan(m.radians(15)))
     L1 = 1.5*Rt*m.sin(15)
+    cstar = (Combustion_chamber_pressure * At)/(0.0685218*start_vehicle_propellent_mass/burn_time)
     #Pt = Pc_Mpa*((1+(Ratio_of_Specific_heats-1))/2)**(-Ratio_of_Specific_heats/(Ratio_of_Specific_heats-1))
+
+    #Combustion Chamber sizing the Alt Way
+    lstar = 40
+    Vc = lstar*At
+    Lc = np.exp(0.029*np.log(Dt*2.54)**2 + 0.47*np.log(Dt*2.54)+1.94)/ 2.54 #this is a rough approximation converted to inches
+    Rc = m.sqrt((Vc/Lc)/m.pi) #this is my assumed cylinder
+    err = 100
+    while err > .001 :
+        Dci = Rc*2 #the initial DC for the iteration
+        Dc = m.sqrt((Dt**3 + (24/m.pi)*m.tan(noz_inlet_angle*m.pi/180)*Vc)/(Dci+6*m.tan(noz_inlet_angle*m.pi/180)*Lc))
+        err = Dc-Dci
+        Dci=Dc
+    CTR = (m.pi*(Dc/2)**2)/At
     print("Throat radius (In): ", Rt)
     print("Exit radius(In): ",Re)
+    print("Nozzle Length(In): ", Ln)
+    print("cstar: ",cstar)
+    print("lstar: ",lstar)
+    print("Chamber Volume(in^3): ",Vc)
+    print("Chamber Length(In): ", Lc )
+    print("Chamber Radius(In): ",Rc)
+    print("Chamber Radius Iter(In): ",Dc/2)
+    print("Chamber to Throat Area Ratio: ",CTR)
     #print("Pt : ",Pt)
     #print("Me : ",Me)
+
+
 
 def tank_calculations(oxidiser_mass, airframe_ID):  #mass in kg, and ID in inches
     global volume_of_n20
