@@ -37,18 +37,18 @@ air_pressure_sea_level = 101325 #Pa
 bodytube_od = 0.2094484 #meters
 bodytube_id = 0.2046224 #meters
 start_vehicle_dry_mass = 330.589099999 #kg
-start_vehicle_propellent_mass = 317.4 #kg
+start_vehicle_propellent_mass = 294.05 #kg
 of_ratio = 2.3 #should be investigated from trades
 time_step = 0.1 #seconds
 simple_cd = .45 #generalized Cd given with nosecone
-thrust_goal = 8896.443 #N ,the number that we will design for
+thrust_goal = 11120.554070627251 #N ,the number that we will design for
 is_parachute = 0 #is there a parachute?
 parachute_diameter = 0 #parachute diameter in meters
 cd_for_parachute_design = 0.9   #this ain't no cone
 parachute_deployment_altitude = 30000   #in meters
 
     #Propep Parameters based on first initialization
-specific_impulse = 250 #m/s
+specific_impulse = 308.37 #m/s
 
     #The Calculated Parameters
 vehicle_crossectional_area = m.pi*(bodytube_od/2)**2    #assuming constant
@@ -60,6 +60,7 @@ propellent_mass_flow = start_vehicle_propellent_mass/burn_time #kg/s
 nitrous_oxide_mass_flow = nitrous_oxide_mass/burn_time #kg/s
 fuelgrain_mass_flow = fuelgrain_mass/burn_time #kg/s
 
+print("Propellant Mass Flow: ",propellent_mass_flow)
 print("Burn Time: ", burn_time)
 
     #Just Programming Parameters
