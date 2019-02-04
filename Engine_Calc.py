@@ -47,8 +47,6 @@ of_ratio = 2.3 #initial O/F ratio
 #combustion_chamber_id = 7.5 #random number in inches
 
 
-
-
 #specific_impulse = 258.7  #input from propep
 
 Po = Combustion_chamber_pressure/atmospheric_pressure #chamber pressure in atmospheres
@@ -144,8 +142,8 @@ def conical_nozzle_calculations_old():
     pe = (ispObj.get_PcOvPe(Pc=Combustion_chamber_pressure, MR=of_ratio, eps=optimum_epsilon)/Combustion_chamber_pressure)**(-1)
     #pe = ((1 + Me ** 2 * (exit_gamma - 1) / 2) ** -(exit_gamma / (exit_gamma - 1)) )* Pt
     Ae = m.pi*(De/2)**2
-    thrust_out = mdot*2.20462*Ve + (pe-Pa)*Ae
-
+    thrust_out = mdot*2.20462*Ve*0.3048 + (pe-Pa)*Ae
+    mdot = (thrust_target*0.2248 - (pe-Pa)*Ae)/Ve
     #Combustion Chamber sizing the Alt Way
     lstar = 50 #high end
     Vc = lstar*At
